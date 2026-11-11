@@ -4,6 +4,24 @@ Projeto de aprendizado sobre dados de mercado de ações: coleta via API
 (Yahoo Finance), modelagem em esquema estrela (fato/dimensões), carga num
 banco SQL e análise de risco/retorno de uma carteira de ações da B3.
 
+## Dashboards
+
+**Observatory** (`output/dashboard_observatory.html`): visão geral do mercado, radar de ativos, risco/retorno, fundamentos e machine learning.
+
+![Dashboard Observatory](docs/dashboard_observatory.png)
+
+**Dashboard clássico** (`output/dashboard.html`):
+
+![Dashboard](docs/dashboard.png)
+
+## Análises
+
+| Risco x retorno | Sharpe simplificado x real |
+|---|---|
+| ![Risco x retorno](plots/risco_x_retorno.png) | ![Comparação Sharpe](plots/comparacao_sharpe.png) |
+
+Para ver os dashboards interativos, baixe o repositório e abra os arquivos `.html` em `output/` no navegador.
+
 ## Estrutura
 
 ```
