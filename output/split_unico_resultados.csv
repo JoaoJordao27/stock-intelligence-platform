@@ -1,0 +1,4 @@
+modelo,acuracia,f1,roc_auc
+Regressão Logística,0.406,0.418,0.424
+Random Forest,0.411,0.462,0.398
+XGBoost,0.444,0.408,0.429

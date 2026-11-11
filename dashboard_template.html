@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stock Intelligence Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg: #12141a;
+    --surface: #1a1d24;
+    --surface-alt: #20242c;
+    --border: #2c303a;
+    --text: #edebe6;
+    --text-dim: #8a8f9c;
+    --gain: #5fa480;
+    --loss: #c1655c;
+    --gold: #c9a24e;
+    --font-display: 'Fraunces', serif;
+    --font-body: 'IBM Plex Sans', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+  }
+
+  *{ box-sizing: border-box; }
+
+  body{
+    margin:0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .masthead{
+    border-bottom: 1px solid var(--border);
+    padding: 32px clamp(20px, 4vw, 56px) 0;
+  }
+
+  .masthead-row{
+    display:flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding-bottom: 20px;
+  }
+
+  .masthead h1{
+    font-family: var(--font-display);
+    font-weight: 500;
+    font-size: clamp(28px, 3.4vw, 40px);
+    margin: 0 0 6px;
+    letter-spacing: -0.01em;
+  }
+
+  .masthead .sub{
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--text-dim);
+  }
+
+  .masthead .meta{
+    text-align: right;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--text-dim);
+    line-height: 1.7;
+  }
+
+  .masthead .meta strong{
+    color: var(--gold);
+    font-weight: 500;
+  }
+
+  nav.tabs{
+    display:flex;
+    gap: 28px;
+  }
+
+  nav.tabs button{
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    font-family: var(--font-body);
+    font-size: 14.5px;
+    padding: 12px 2px 14px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    transition: color .15s ease, border-color .15s ease;
+  }
+
+  nav.tabs button:hover{ color: var(--text); }
+
+  nav.tabs button.active{
+    color: var(--text);
+    border-bottom-color: var(--gold);
+  }
+
+  main{
+    padding: 32px clamp(20px, 4vw, 56px) 64px;
+    max-width: 1320px;
+    margin: 0 auto;
+  }
+
+  .panel{ display:none; }
+  .panel.active{ display:block; }
+
+  .ticker-strip{
+    display:flex;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
+  }
+
+  .ticker-cell{
+    flex: 1 1 160px;
+    padding: 16px 20px;
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .ticker-cell:last-child{ border-right: none; }
+
+  .ticker-cell .code{
+    font-family: var(--font-mono);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+  .ticker-cell .name{
+    font-size: 11.5px;
+    color: var(--text-dim);
+    margin: 2px 0 10px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .ticker-cell .price{
+    font-family: var(--font-mono);
+    font-size: 19px;
+  }
+  .ticker-cell .change{
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    margin-top: 2px;
+  }
+  .change.pos{ color: var(--gain); }
+  .change.neg{ color: var(--loss); }
+  .pos{ color: var(--gain); }
+  .neg{ color: var(--loss); }
+
+  .focus-header{
+    display:flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  .focus-label{
+    display:block;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 6px;
+  }
+  select.ticker-select{
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 10px 14px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    min-width: 240px;
+    cursor: pointer;
+  }
+  select.ticker-select:focus{
+    outline: none;
+    border-color: var(--gold);
+  }
+  .focus-name{
+    font-family: var(--font-display);
+    font-size: 18px;
+    color: var(--text-dim);
+  }
+  .focus-name strong{ color: var(--text); font-weight:500; }
+
+  .pill{
+    display:inline-block;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-family: var(--font-mono);
+    border: 1px solid var(--border);
+    margin-top: 4px;
+  }
+  .pill-buy{ color: var(--gain); border-color: var(--gain); }
+  .pill-sell{ color: var(--loss); border-color: var(--loss); }
+  .pill-neutral{ color: var(--text-dim); }
+
+  .grid-2{
+    display:grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+
+  .card{
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 22px 24px;
+  }
+
+  .card h2{
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: none;
+    color: var(--text);
+    margin: 0 0 4px;
+  }
+  .card .card-note{
+    font-size: 12px;
+    color: var(--text-dim);
+    margin: 0 0 18px;
+  }
+
+  .chart-wrap{ position: relative; }
+
+  table{
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+  }
+  th, td{
+    text-align: right;
+    padding: 8px 6px;
+    border-bottom: 1px solid var(--border);
+  }
+  th:first-child, td:first-child{ text-align: left; }
+  th{
+    color: var(--text-dim);
+    font-weight: 500;
+    font-size: 11px;
+  }
+  td.pos{ color: var(--gain); }
+  td.neg{ color: var(--loss); }
+
+  .legend-row{
+    display:flex;
+    flex-wrap: wrap;
+    gap: 6px 14px;
+    margin-bottom: 14px;
+  }
+  .legend-item{
+    display:flex;
+    align-items:center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--text-dim);
+    cursor: pointer;
+    user-select: none;
+  }
+  .legend-item.off{ opacity: .35; }
+  .legend-swatch{
+    width: 10px; height: 10px; border-radius: 2px; flex-shrink:0;
+  }
+
+  .corr-table td, .corr-table th{ text-align:center; padding: 7px 4px; }
+  .corr-table td:first-child{ text-align:left; color: var(--text-dim); }
+
+  .section-title{
+    font-family: var(--font-display);
+    font-size: 20px;
+    font-weight: 500;
+    margin: 36px 0 16px;
+  }
+  .section-title:first-child{ margin-top:0; }
+
+  footer{
+    padding: 20px clamp(20px, 4vw, 56px) 40px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-dim);
+  }
+
+  @media (max-width: 860px){
+    .grid-2{ grid-template-columns: 1fr; }
+    .masthead-row{ align-items: flex-start; }
+    .masthead .meta{ text-align:left; }
+  }
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <div class="masthead-row">
+    <div>
+      <h1>Stock Intelligence Platform</h1>
+      <div class="sub">Analytics de mercado &middot; dados via Yahoo Finance</div>
+    </div>
+    <div class="meta" id="metaBlock"></div>
+  </div>
+  <nav class="tabs">
+    <button class="tab-btn active" data-panel="overview">Market Overview</button>
+    <button class="tab-btn" data-panel="ticker">Ticker</button>
+    <button class="tab-btn" data-panel="performance">Performance</button>
+    <button class="tab-btn" data-panel="risk">Risk Analysis</button>
+    <button class="tab-btn" data-panel="health">Financial Health</button>
+    <button class="tab-btn" data-panel="ml">Machine Learning</button>
+  </nav>
+</div>
+
+<main>
+
+  <!-- MARKET OVERVIEW -->
+  <section class="panel active" id="panel-overview">
+    <div class="ticker-strip" id="tickerStrip"></div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h2>Market cap por setor</h2>
+        <p class="card-note">Soma do valor de mercado dos ativos monitorados, agrupado por setor</p>
+        <div class="chart-wrap"><canvas id="chartSector" height="220"></canvas></div>
+      </div>
+      <div class="card">
+        <h2>Composição da carteira</h2>
+        <p class="card-note">6 ativos, ordenados por market cap</p>
+        <table id="tblOverview">
+          <thead><tr><th>Ticker</th><th>Setor</th><th>Preço</th><th>Dia %</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- TICKER FOCUS -->
+  <section class="panel" id="panel-ticker">
+    <div class="focus-header">
+      <div>
+        <span class="focus-label">Ativo em foco</span>
+        <select id="tickerSelect" class="ticker-select"></select>
+      </div>
+      <div class="focus-name" id="focusName"></div>
+    </div>
+
+    <div class="ticker-strip" id="focusStats" style="margin-bottom:24px;"></div>
+
+    <div class="card" style="margin-bottom:24px;">
+      <h2>Preço &times; médias móveis</h2>
+      <p class="card-note">Fechamento diário com MM20/50/200 sobrepostas &middot; troca em tempo real ao selecionar outro ativo</p>
+      <div class="chart-wrap"><canvas id="chartTickerPrice" height="130"></canvas></div>
+    </div>
+
+    <div class="card" id="cardTickerRsi">
+      <h2>RSI (14)</h2>
+      <p class="card-note">Faixa vermelha (&gt;70) = sobrecomprado &middot; faixa verde (&lt;30) = sobrevendido</p>
+      <div class="chart-wrap"><canvas id="chartTickerRsi" height="90"></canvas></div>
+    </div>
+  </section>
+
+  <!-- PERFORMANCE -->
+  <section class="panel" id="panel-performance">
+    <div class="card">
+      <h2>Retorno normalizado (base 100)</h2>
+      <p class="card-note">Preço de fechamento indexado ao primeiro dia do período &middot; clique na legenda para isolar um ativo</p>
+      <div class="legend-row" id="perfLegend"></div>
+      <div class="chart-wrap"><canvas id="chartPerf" height="110"></canvas></div>
+    </div>
+
+    <div class="section-title">Retorno no período</div>
+    <div class="card">
+      <table id="tblPerf">
+        <thead><tr><th>Ticker</th><th>Empresa</th><th>Retorno anualizado</th><th>Preço atual</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- RISK ANALYSIS -->
+  <section class="panel" id="panel-risk">
+    <div class="grid-2">
+      <div class="card">
+        <h2>Risco &times; Retorno</h2>
+        <p class="card-note">Linha pontilhada = CDI/Selic anualizado do período (referência livre de risco)</p>
+        <div class="chart-wrap"><canvas id="chartRisk" height="260"></canvas></div>
+      </div>
+      <div class="card">
+        <h2>Sharpe Ratio</h2>
+        <p class="card-note">Excesso de retorno sobre o CDI, ajustado ao risco</p>
+        <table id="tblSharpe">
+          <thead><tr><th>Ticker</th><th>Sharpe</th><th>Retorno</th><th>Vol.</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="section-title">Correlação de retornos diários</div>
+    <div class="card">
+      <table class="corr-table" id="tblCorr"></table>
+    </div>
+  </section>
+
+  <!-- FINANCIAL HEALTH -->
+  <section class="panel" id="panel-health">
+    <div class="grid-2">
+      <div class="card">
+        <h2>ROE &times; P/L</h2>
+        <p class="card-note">Quadrante superior-esquerdo = barato e rentável &middot; inferior-direito = caro e pouco rentável</p>
+        <div class="chart-wrap"><canvas id="chartHealth" height="260"></canvas></div>
+      </div>
+      <div class="card">
+        <h2>Margem líquida por ativo</h2>
+        <p class="card-note">% da receita convertida em lucro</p>
+        <div class="chart-wrap"><canvas id="chartMargem" height="260"></canvas></div>
+      </div>
+    </div>
+
+    <div class="section-title">Indicadores fundamentalistas</div>
+    <div class="card">
+      <table id="tblHealth">
+        <thead><tr>
+          <th>Ticker</th><th>P/L</th><th>P/VP</th><th>ROE</th><th>ROA</th>
+          <th>Marg. líq.</th><th>Dív/Patr.</th><th>Liq. corr.</th><th>Div. yield</th><th>Cresc. receita</th>
+        </tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- MACHINE LEARNING -->
+  <section class="panel" id="panel-ml">
+    <div class="card" style="margin-bottom:24px;">
+      <h2>Alvo do modelo</h2>
+      <p class="card-note" style="margin-bottom:0;">Classificação binária: retorno dos próximos 20 pregões supera o CDI equivalente (1,03% no período) &middot; features: posição do preço vs. médias móveis (20/50/200), RSI(14), retorno diário e volume normalizado</p>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h2>Split único vs. Walk-Forward</h2>
+        <p class="card-note">Um teste único pode cair numa janela de mercado atípica &mdash; a validação walk-forward testa em 5 janelas temporais sucessivas</p>
+        <div class="chart-wrap"><canvas id="chartMlCompare" height="240"></canvas></div>
+      </div>
+      <div class="card">
+        <h2>ROC-AUC por fold</h2>
+        <p class="card-note">0,50 = equivalente a chute aleatório</p>
+        <div class="chart-wrap"><canvas id="chartMlFolds" height="240"></canvas></div>
+      </div>
+    </div>
+
+    <div class="section-title">Leitura</div>
+    <div class="card" id="mlReadout"></div>
+  </section>
+
+</main>
+
+<footer id="footerNote"></footer>
+
+<script id="dashboard-data" type="application/json">
+__DATA_JSON__
+</script>
+
+<script>
+const DATA = JSON.parse(document.getElementById('dashboard-data').textContent);
+
+const PALETTE = ['#c9a24e', '#5fa480', '#7a92b5', '#c1655c', '#9b8fc7', '#b58a5a'];
+
+function fmtPct(v, digits=2){
+  const s = v.toFixed(digits) + '%';
+  return v > 0 ? '+' + s : s;
+}
+function fmtNum(v, digits=2){ return v.toFixed(digits); }
+
+// ---------- Masthead meta ----------
+document.getElementById('metaBlock').innerHTML =
+  `${DATA.meta.n_tickers} ativos &middot; B3<br>` +
+  `${DATA.meta.periodo_inicio} &rarr; ${DATA.meta.periodo_fim}<br>` +
+  `CDI/Selic <strong>${DATA.meta.cdi_anual_pct}% a.a.</strong>`;
+
+document.getElementById('footerNote').textContent =
+  `Fonte: Yahoo Finance (yfinance) &middot; Benchmark CDI/Selic: Banco Central do Brasil &middot; Gerado a partir do pipeline Stock Intelligence Platform`;
+
+// ---------- Tabs ----------
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + btn.dataset.panel).classList.add('active');
+  });
+});
+
+// ---------- Market Overview ----------
+const tickersSorted = [...DATA.tickers].sort((a,b) => b.market_cap - a.market_cap);
+
+const stripHtml = tickersSorted.map(t => {
+  const cls = t.variacao_dia_pct >= 0 ? 'pos' : 'neg';
+  return `<div class="ticker-cell">
+    <div class="code">${t.ticker}</div>
+    <div class="name">${t.empresa}</div>
+    <div class="price">R$ ${fmtNum(t.preco_atual)}</div>
+    <div class="change ${cls}">${fmtPct(t.variacao_dia_pct)}</div>
+  </div>`;
+}).join('');
+document.getElementById('tickerStrip').innerHTML = stripHtml;
+
+const tblOverviewBody = tickersSorted.map(t => {
+  const cls = t.variacao_dia_pct >= 0 ? 'pos' : 'neg';
+  return `<tr>
+    <td>${t.ticker}</td>
+    <td>${t.setor}</td>
+    <td>R$ ${fmtNum(t.preco_atual)}</td>
+    <td class="${cls}">${fmtPct(t.variacao_dia_pct)}</td>
+  </tr>`;
+}).join('');
+document.querySelector('#tblOverview tbody').innerHTML = tblOverviewBody;
+
+// Market cap por setor
+const setorMap = {};
+DATA.tickers.forEach(t => {
+  setorMap[t.setor] = (setorMap[t.setor] || 0) + t.market_cap;
+});
+const setores = Object.keys(setorMap).sort((a,b) => setorMap[b]-setorMap[a]);
+new Chart(document.getElementById('chartSector'), {
+  type: 'bar',
+  data: {
+    labels: setores,
+    datasets: [{
+      data: setores.map(s => setorMap[s] / 1e9),
+      backgroundColor: '#c9a24e',
+      borderRadius: 2,
+      barThickness: 22,
+    }]
+  },
+  options: {
+    indexAxis: 'y',
+    responsive: true,
+    plugins: { legend: { display:false },
+      tooltip: { callbacks: { label: (ctx) => `R$ ${ctx.parsed.x.toFixed(1)} bi` } } },
+    scales: {
+      x: { grid: { color: '#2c303a' }, ticks: { color:'#8a8f9c', font:{family:"IBM Plex Mono", size:11} } },
+      y: { grid: { display:false }, ticks: { color:'#edebe6', font:{family:"IBM Plex Sans", size:12} } }
+    }
+  }
+});
+
+// ---------- Ticker Focus (seletor em tempo real) ----------
+const temIndicadores = !!DATA.meta.tem_indicadores;
+if (!temIndicadores){
+  document.getElementById('cardTickerRsi').style.display = 'none';
+}
+
+const tickerSelect = document.getElementById('tickerSelect');
+tickersSorted.forEach(t => {
+  const opt = document.createElement('option');
+  opt.value = t.ticker_full;
+  opt.textContent = `${t.ticker} — ${t.empresa}`;
+  tickerSelect.appendChild(opt);
+});
+
+function rsiPill(rsi){
+  if (rsi == null) return '<span class="pill pill-neutral">sem dado</span>';
+  if (rsi >= 70) return `<span class="pill pill-sell">${rsi.toFixed(0)} &middot; sobrecomprado</span>`;
+  if (rsi <= 30) return `<span class="pill pill-buy">${rsi.toFixed(0)} &middot; sobrevendido</span>`;
+  return `<span class="pill pill-neutral">${rsi.toFixed(0)} &middot; neutro</span>`;
+}
+
+let chartTickerPrice, chartTickerRsi;
+
+function renderTicker(tickerFull){
+  const t = DATA.tickers.find(x => x.ticker_full === tickerFull);
+  const s = DATA.series[tickerFull];
+  const cls = t.variacao_dia_pct >= 0 ? 'pos' : 'neg';
+  const ultimoRsi = temIndicadores ? s.rsi14[s.rsi14.length - 1] : null;
+
+  document.getElementById('focusName').innerHTML =
+    `<strong>${t.ticker}</strong> &middot; ${t.empresa} &middot; ${t.setor}`;
+
+  document.getElementById('focusStats').innerHTML = `
+    <div class="ticker-cell">
+      <div class="name">Preço</div>
+      <div class="price">R$ ${fmtNum(t.preco_atual)}</div>
+      <div class="change ${cls}">${fmtPct(t.variacao_dia_pct)} hoje</div>
+    </div>
+    <div class="ticker-cell">
+      <div class="name">Sharpe real</div>
+      <div class="price ${t.sharpe_real>=0?'pos':'neg'}">${fmtNum(t.sharpe_real)}</div>
+    </div>
+    <div class="ticker-cell">
+      <div class="name">Retorno a.a.</div>
+      <div class="price ${t.retorno_anualizado_pct>=0?'pos':'neg'}">${fmtPct(t.retorno_anualizado_pct,1)}</div>
+    </div>
+    <div class="ticker-cell">
+      <div class="name">Vol. a.a.</div>
+      <div class="price">${fmtNum(t.vol_anualizada_pct,1)}%</div>
+    </div>
+    <div class="ticker-cell">
+      <div class="name">RSI (14)</div>
+      <div class="price">${ultimoRsi != null ? ultimoRsi.toFixed(0) : '—'}</div>
+      ${rsiPill(ultimoRsi)}
+    </div>
+  `;
+
+  chartTickerPrice.data.datasets[0].data = s.close;
+  if (temIndicadores){
+    chartTickerPrice.data.datasets[1].data = s.mm20;
+    chartTickerPrice.data.datasets[2].data = s.mm50;
+    chartTickerPrice.data.datasets[3].data = s.mm200;
+  }
+  chartTickerPrice.update();
+
+  if (chartTickerRsi){
+    chartTickerRsi.data.datasets[0].data = s.rsi14;
+    chartTickerRsi.update();
+  }
+}
+
+const tickerDefault = tickersSorted[0].ticker_full;
+
+chartTickerPrice = new Chart(document.getElementById('chartTickerPrice'), {
+  type: 'line',
+  data: {
+    labels: DATA.datas,
+    datasets: [
+      { label: 'Fechamento', data: DATA.series[tickerDefault].close,
+        borderColor: '#edebe6', backgroundColor: '#edebe6', borderWidth: 1.8, pointRadius: 0, tension: 0.1 },
+      ...(temIndicadores ? [
+        { label: 'MM20', data: DATA.series[tickerDefault].mm20,
+          borderColor: '#c9a24e', backgroundColor: '#c9a24e', borderWidth: 1.2, pointRadius: 0, tension: 0.1 },
+        { label: 'MM50', data: DATA.series[tickerDefault].mm50,
+          borderColor: '#7a92b5', backgroundColor: '#7a92b5', borderWidth: 1.2, pointRadius: 0, tension: 0.1 },
+        { label: 'MM200', data: DATA.series[tickerDefault].mm200,
+          borderColor: '#c1655c', backgroundColor: '#c1655c', borderWidth: 1.2, pointRadius: 0, tension: 0.1 },
+      ] : [])
+    ]
+  },
+  options: {
+    responsive: true,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { labels: { color: '#8a8f9c', font: { family: "IBM Plex Sans", size: 11 } } },
+      tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y != null ? 'R$ ' + ctx.parsed.y.toFixed(2) : '—'}` } }
+    },
+    scales: {
+      x: { grid: { display:false }, ticks: { color:'#8a8f9c', font:{family:"IBM Plex Mono", size:10}, maxTicksLimit: 8 } },
+      y: { grid: { color:'#2c303a' }, ticks: { color:'#8a8f9c', font:{family:"IBM Plex Mono", size:11} },
+           title: { display:true, text:'R$', color:'#8a8f9c', font:{family:"IBM Plex Sans", size:11} } }
+    }
+  }
+});
+
+if (temIndicadores){
+  chartTickerRsi = new Chart(document.getElementById('chartTickerRsi'), {
+    type: 'line',
+    data: {
+      labels: DATA.datas,
+      datasets: [{ label: 'RSI(14)', data: DATA.series[tickerDefault].rsi14,
+        borderColor: '#c9a24e', backgroundColor: '#c9a24e', borderWidth: 1.6, pointRadius: 0, tension: 0.1 }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display:false },
+        tooltip: { callbacks: { label: (ctx) => `RSI: ${ctx.parsed.y != null ? ctx.parsed.y.toFixed(1) : '—'}` } }
+      },
+      scales: {
+        x: { grid: { display:false }, ticks: { color:'#8a8f9c', font:{family:"IBM Plex Mono", size:10}, maxTicksLimit: 8 } },
+        y: { min:0, max:100, grid: { color:'#2c303a' }, ticks: { color:'#8a8f9c', font:{family:"IBM Plex Mono", size:11} } }
+      }
+    },
+    plugins: [{
+      id: 'rsiZones',
+      beforeDraw(chart){
+        const {ctx, chartArea, scales} = chart;
+        const y30 = scales.y.getPixelForValue(30);
+        const y70 = scales.y.getPixelForValue(70);
+        ctx.save();
+        ctx.fillStyle = 'rgba(193,101,92,0.07)';
+        ctx.fillRect(chartArea.left, chartArea.top, chartArea.width, y70 - chartArea.top);
+        ctx.fillStyle = 'rgba(95,164,128,0.07)';
+        ctx.fillRect(chartArea.left, y30, chartArea.width, chartArea.bottom - y30);
+        ctx.restore();
+      },
+      afterDraw(chart){
+        const {ctx, chartArea, scales} = chart;
+        [30, 70].forEach(v => {
+          const y = scales.y.getPixelForValue(v);
+          ctx.save();
+          ctx.strokeStyle = '#8a8f9c';
+          ctx.setLineDash([3,3]);
+          ctx.beginPath();
+          ctx.moveTo(chartArea.left, y);
+          ctx.lineTo(chartArea.right, y);
+          ctx.stroke();
+          ctx.restore();
+        });
+      }
+    }]
+  });
+}
+
+tickerSelect.value = tickerDefault;
+renderTicker(tickerDefault);
+tickerSelect.addEventListener('change', () => renderTicker(tickerSelect.value));
+
+// ---------- Performance ----------
+const perfDatasets = DATA.tickers.map((t, i) => ({
+  label: t.ticker,
+  data: DATA.series[t.ticker_full].norm100,
+  borderColor: PALETTE[i % PALETTE.length],
+  backgroundColor: PALETTE[i % PALETTE.length],
+  borderWidth: 1.6,
+  pointRadius: 0,
+  tension: 0.15,
+}));
+
+const dateLabels = DATA.datas.map(d => d.slice(0,7));
+
+const chartPerf = new Chart(document.getElementById('chartPerf'), {
+  type: 'line',
+  data: { labels: DATA.datas, datasets: perfDatasets },
+  options: {
+    responsive: true,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          title: (items) => items[0].label,
+          label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}`
+        }
+      }
+    },
+    scales: {
+      x: {
+        grid: { display:false },
+        ticks: { color:'#8a8f9c', font:{family:"IBM Plex Mono", size:10}, maxTicksLimit: 8 }
+      },
+      y: {
+        grid: { color: '#2c303a' },
+        ticks: { color:'#8a8f9c', font:{family:"IBM Plex Mono", size:11} },
+        title: { display:true, text:'Índice (base 100)', color:'#8a8f9c', font:{family:"IBM Plex Sans", size:11} }
+      }
+    }
+  }
+});
+
+const perfLegend = document.getElementById('perfLegend');
+DATA.tickers.forEach((t, i) => {
+  const item = document.createElement('div');
+  item.className = 'legend-item';
+  item.innerHTML = `<span class="legend-swatch" style="background:${PALETTE[i % PALETTE.length]}"></span>${t.ticker}`;
+  item.addEventListener('click', () => {
+    const meta = chartPerf.getDatasetMeta(i);
+    meta.hidden = meta.hidden === null ? !chartPerf.data.datasets[i].hidden : !meta.hidden;
+    item.classList.toggle('off', meta.hidden);
+    chartPerf.update();
+  });
+  perfLegend.appendChild(item);
+});
+
+const perfSorted = [...DATA.tickers].sort((a,b) => b.retorno_anualizado_pct - a.retorno_anualizado_pct);
+document.querySelector('#tblPerf tbody').innerHTML = perfSorted.map(t => {
+  const cls = t.retorno_anualizado_pct >= 0 ? 'pos' : 'neg';
+  return `<tr>
+    <td>${t.ticker}</td>
+    <td style="text-align:left">${t.empresa}</td>
+    <td class="${cls}">${fmtPct(t.retorno_anualizado_pct)} a.a.</td>
+    <td>R$ ${fmtNum(t.preco_atual)}</td>
+  </tr>`;
+}).join('');
+
+// ---------- Risk Analysis ----------
+const scatterPoints = DATA.tickers.map((t, i) => ({
+  x: t.vol_anualizada_pct, y: t.retorno_anualizado_pct, ticker: t.ticker
+}));
+const minVol = Math.min(...scatterPoints.map(p=>p.x)) - 4;
+const maxVol = Math.max(...scatterPoints.map(p=>p.x)) + 4;
+
+new Chart(document.getElementById('chartRisk'), {
+  type: 'scatter',
+  data: {
+    datasets: [
+      {
+        label: 'Ativos',
+        data: scatterPoints,
+        backgroundColor: PALETTE[0],
+        pointRadius: 6,
+        pointHoverRadius: 8,
+      },
+      {
+        label: 'CDI/Selic',
+        type: 'line',
+        data: [{x:minVol, y:DATA.meta.cdi_anual_pct}, {x:maxVol, y:DATA.meta.cdi_anual_pct}],
+        borderColor: '#8a8f9c',
+        borderDash: [4,4],
+        borderWidth: 1.4,
+        pointRadius: 0,
+        showLine: true,
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: {
+      legend: { display:false },
+      tooltip: {
+        callbacks: {
+          label: (ctx) => ctx.dataset.label === 'CDI/Selic'
+            ? `CDI/Selic: ${ctx.parsed.y.toFixed(2)}%`
+            : `${ctx.raw.ticker}: retorno ${ctx.parsed.y.toFixed(1)}% / vol ${ctx.parsed.x.toFixed(1)}%`
+        }
+      }
+    },
+    scales: {
+      x: {
+        title: { display:true, text:'Volatilidade anualizada (%)', color:'#8a8f9c', font:{family:"IBM Plex Sans", size:11} },
+        grid: { color:'#2c303a' },
+        ticks: { color:'#8a8f9c', font:{family:"IBM Plex Mono", size:11} }
+      },
+      y: {
+        title: { display:true, text:'Retorno anualizado (%)', color:'#8a8f9c', font:{family:"IBM Plex Sans", size:11} },
+        grid: { color:'#2c303a' },
+        ticks: { color:'#8a8f9c', font:{family:"IBM Plex Mono", size:11} }
+      }
+    }
+  },
+  plugins: [{
+    id: 'pointLabels',
+    afterDatasetsDraw(chart){
+      const {ctx} = chart;
+      const meta = chart.getDatasetMeta(0);
+      ctx.save();
+      ctx.font = "11px 'IBM Plex Mono'";
+      ctx.fillStyle = '#edebe6';
+      meta.data.forEach((point, i) => {
+        ctx.fillText(scatterPoints[i].ticker, point.x + 8, point.y + 3);
+      });
+      ctx.restore();
+    }
+  }]
+});
+
+const sharpeSorted = [...DATA.tickers].sort((a,b) => b.sharpe_real - a.sharpe_real);
+document.querySelector('#tblSharpe tbody').innerHTML = sharpeSorted.map(t => {
+  const cls = t.sharpe_real >= 0 ? 'pos' : 'neg';
+  return `<tr>
+    <td>${t.ticker}</td>
+    <td class="${cls}">${fmtNum(t.sharpe_real)}</td>
+    <td>${fmtPct(t.retorno_anualizado_pct,1)}</td>
+    <td>${fmtNum(t.vol_anualizada_pct,1)}%</td>
+  </tr>`;
+}).join('');
+
+// Correlação
+const corr = DATA.correlacao;
+let corrHtml = '<thead><tr><th></th>' + corr.tickers.map(t=>`<th>${t}</th>`).join('') + '</tr></thead><tbody>';
+corr.tickers.forEach((rowT, i) => {
+  corrHtml += `<tr><td>${rowT}</td>`;
+  corr.matriz[i].forEach((v, j) => {
+    const alpha = i === j ? 0 : Math.abs(v) * 0.55;
+    const color = v >= 0 ? `rgba(95,164,128,${alpha})` : `rgba(193,101,92,${alpha})`;
+    corrHtml += `<td style="background:${color}">${v.toFixed(2)}</td>`;
+  });
+  corrHtml += '</tr>';
+});
+corrHtml += '</tbody>';
+document.getElementById('tblCorr').innerHTML = corrHtml;
+
+// ---------- Financial Health ----------
+const comFundamentos = DATA.tickers.filter(t => t.pl !== undefined && t.pl !== null);
+
+if (comFundamentos.length > 0){
+  new Chart(document.getElementById('chartHealth'), {
+    type: 'scatter',
+    data: {
+      datasets: [{
+        label: 'Ativos',
+        data: comFundamentos.map(t => ({x: t.pl, y: t.roe, ticker: t.ticker})),
+        backgroundColor: '#c9a24e',
+        pointRadius: 7,
+        pointHoverRadius: 9,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display:false },
+        tooltip: { callbacks: { label: (ctx) => `${ctx.raw.ticker}: P/L ${ctx.parsed.x.toFixed(1)} / ROE ${ctx.parsed.y.toFixed(1)}%` } }
+      },
+      scales: {
+        x: { title: { display:true, text:'P/L', color:'#8a8f9c', font:{family:"IBM Plex Sans", size:11} },
+             grid:{color:'#2c303a'}, ticks:{color:'#8a8f9c', font:{family:"IBM Plex Mono", size:11}} },
+        y: { title: { display:true, text:'ROE (%)', color:'#8a8f9c', font:{family:"IBM Plex Sans", size:11} },
+             grid:{color:'#2c303a'}, ticks:{color:'#8a8f9c', font:{family:"IBM Plex Mono", size:11}} }
+      }
+    },
+    plugins: [{
+      id: 'healthLabels',
+      afterDatasetsDraw(chart){
+        const {ctx} = chart;
+        const meta = chart.getDatasetMeta(0);
+        ctx.save();
+        ctx.font = "11px 'IBM Plex Mono'";
+        ctx.fillStyle = '#edebe6';
+        meta.data.forEach((point, i) => {
+          ctx.fillText(comFundamentos[i].ticker, point.x + 8, point.y + 3);
+        });
+        ctx.restore();
+      }
+    }]
+  });
+
+  new Chart(document.getElementById('chartMargem'), {
+    type: 'bar',
+    data: {
+      labels: comFundamentos.map(t => t.ticker),
+      datasets: [{
+        data: comFundamentos.map(t => t.margem_liquida),
+        backgroundColor: comFundamentos.map(t => t.margem_liquida >= 0 ? '#5fa480' : '#c1655c'),
+        borderRadius: 2,
+        barThickness: 28,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend:{display:false}, tooltip:{ callbacks:{ label: (ctx) => `${ctx.parsed.y.toFixed(1)}%` } } },
+      scales: {
+        x: { grid:{display:false}, ticks:{color:'#edebe6', font:{family:"IBM Plex Mono", size:12}} },
+        y: { grid:{color:'#2c303a'}, ticks:{color:'#8a8f9c', font:{family:"IBM Plex Mono", size:11}} }
+      }
+    }
+  });
+
+  document.querySelector('#tblHealth tbody').innerHTML = comFundamentos.map(t => `<tr>
+    <td>${t.ticker}</td>
+    <td>${t.pl.toFixed(1)}</td>
+    <td>${t.pvp.toFixed(2)}</td>
+    <td class="${t.roe>=0?'pos':'neg'}">${t.roe.toFixed(1)}%</td>
+    <td>${t.roa.toFixed(1)}%</td>
+    <td>${t.margem_liquida.toFixed(1)}%</td>
+    <td>${t.divida_patrimonio != null ? t.divida_patrimonio.toFixed(1)+'%' : '—'}</td>
+    <td>${t.liquidez_corrente != null ? t.liquidez_corrente.toFixed(2) : '—'}</td>
+    <td>${t.dividend_yield.toFixed(2)}%</td>
+    <td class="${t.crescimento_receita>=0?'pos':'neg'}">${fmtPct(t.crescimento_receita,1)}</td>
+  </tr>`).join('');
+} else {
+  document.getElementById('panel-health').innerHTML = '<div class="card"><p class="card-note">Fundamentos ainda não coletados — rode 05_coleta_fundamentos.py e gere o dashboard de novo.</p></div>';
+}
+
+// ---------- Machine Learning ----------
+if (DATA.ml){
+  const ML = DATA.ml;
+  const modelos = [...new Set(ML.walkforward_resumo.map(r => r.modelo))];
+
+  // Split único vs. média walk-forward
+  const splitMap = Object.fromEntries(ML.split_unico.map(r => [r.modelo, r.roc_auc]));
+  const wfMap = Object.fromEntries(ML.walkforward_resumo.map(r => [r.modelo, r.mean]));
+
+  new Chart(document.getElementById('chartMlCompare'), {
+    type: 'bar',
+    data: {
+      labels: modelos,
+      datasets: [
+        { label: 'Split único', data: modelos.map(m => splitMap[m]), backgroundColor: '#c1655c', borderRadius: 2, barThickness: 22 },
+        { label: 'Walk-forward (média)', data: modelos.map(m => wfMap[m]), backgroundColor: '#5fa480', borderRadius: 2, barThickness: 22 },
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { labels: { color:'#8a8f9c', font:{family:"IBM Plex Sans", size:11} } },
+        tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(3)}` } }
+      },
+      scales: {
+        x: { grid:{display:false}, ticks:{color:'#edebe6', font:{family:"IBM Plex Mono", size:11}} },
+        y: { min:0, max:0.8, grid:{color:'#2c303a'}, ticks:{color:'#8a8f9c', font:{family:"IBM Plex Mono", size:11}},
+             title:{display:true, text:'ROC-AUC', color:'#8a8f9c', font:{family:"IBM Plex Sans", size:11}} }
+      }
+    }
+  });
+
+  // ROC-AUC por fold (linha)
+  const foldsPorModelo = {};
+  modelos.forEach(m => foldsPorModelo[m] = []);
+  const foldLabels = [...new Set(ML.walkforward_folds.map(r => r.fold))].sort();
+  foldLabels.forEach(f => {
+    modelos.forEach(m => {
+      const linha = ML.walkforward_folds.find(r => r.fold === f && r.modelo === m);
+      foldsPorModelo[m].push(linha ? linha.roc_auc : null);
+    });
+  });
+
+  new Chart(document.getElementById('chartMlFolds'), {
+    type: 'line',
+    data: {
+      labels: foldLabels.map(f => 'Fold ' + f),
+      datasets: modelos.map((m, i) => ({
+        label: m,
+        data: foldsPorModelo[m],
+        borderColor: PALETTE[i % PALETTE.length],
+        backgroundColor: PALETTE[i % PALETTE.length],
+        borderWidth: 1.8,
+        pointRadius: 3,
+        tension: 0.1,
+      }))
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { labels: { color:'#8a8f9c', font:{family:"IBM Plex Sans", size:11} } },
+        tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(3)}` } }
+      },
+      scales: {
+        x: { offset: true, grid:{display:false}, ticks:{color:'#8a8f9c', font:{family:"IBM Plex Mono", size:11}} },
+        y: { min:0.3, max:0.8, grid:{color:'#2c303a'}, ticks:{color:'#8a8f9c', font:{family:"IBM Plex Mono", size:11}},
+             title:{display:true, text:'ROC-AUC', color:'#8a8f9c', font:{family:"IBM Plex Sans", size:11}} }
+      }
+    },
+    plugins: [{
+      id: 'refLine50',
+      afterDraw(chart){
+        const {ctx, chartArea, scales} = chart;
+        const y = scales.y.getPixelForValue(0.5);
+        ctx.save();
+        ctx.strokeStyle = '#8a8f9c';
+        ctx.setLineDash([3,3]);
+        ctx.beginPath();
+        ctx.moveTo(chartArea.left, y);
+        ctx.lineTo(chartArea.right, y);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }]
+  });
+
+  const melhorWf = ML.walkforward_resumo.reduce((a,b) => a.mean > b.mean ? a : b);
+  document.getElementById('mlReadout').innerHTML = `
+    <p style="margin:0 0 12px; line-height:1.6;">O teste de split único subestimou o modelo: caiu exatamente na pior janela de mercado do período (fold 5), com ROC-AUC de ${splitMap[melhorWf.modelo].toFixed(2)}. A validação walk-forward mostra que <strong style="color:var(--gold)">${melhorWf.modelo}</strong> tem, na média das 5 janelas, ROC-AUC de <strong style="color:var(--gold)">${melhorWf.mean.toFixed(2)}</strong> (desvio-padrão ${ML.walkforward_resumo.find(r=>r.modelo===melhorWf.modelo).std.toFixed(2)}) — sinal preditivo real, porém modesto e instável entre regimes de mercado.</p>
+    <p style="margin:0; line-height:1.6; color:var(--text-dim); font-size:13px;">Leitura recomendada: reportar o intervalo (não um número único) e tratar o resultado como evidência de sinal fraco, não como modelo pronto para uso prático.</p>
+  `;
+}
+</script>
+
+</body>
+</html>
